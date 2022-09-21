@@ -1,118 +1,174 @@
-<!--
-  Copyright (c) 2011 Google Inc.
-  Licensed under the Apache License, Version 2.0 (the "License"); you may not
-  use this file except in compliance with the License. You may obtain a copy of
-  the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-  License for the specific language governing permissions and limitations under
-  the License.
-  To run this sample, set apiKey to your application's API key and clientId to
-  your application's OAuth 2.0 client ID. They can be generated at:
-    https://console.developers.google.com/apis/credentials?project=_
-  Then, add a JavaScript origin to the client that corresponds to the domain
-  where you will be running the script. Finally, activate the People API at:
-    https://console.developers.google.com/apis/library?project=_
--->
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Say hello using the People API</title>
-    <meta charset='utf-8' />
-  </head>
-  <body>
-    <p>Say hello using the People API.</p>
+<head>
+  <title>Google login example</title>
+  <script src="https://apis.google.com/js/client:platform.js" async defer></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <style media="screen">
+    h3 {
+      color:green;
+    }
+  </style>
+</head>
+<body>
+  <button name="button" id="disconnect" style="display:none;">Disconnect</button>
 
-    <!--Add buttons to initiate auth sequence and sign out-->
-    <button id="authorize-button" style="display: none;">Authorize</button>
-    <button id="signout-button" style="display: none;">Sign Out</button>
+  <!-- https://developers.google.com/+/web/signin/?hl=en#button_attributes -->
+  <div id="gConnect">
+    <button class="g-signin"
+        data-clientid="927726762124-hkl5r97e2uofbslb0fdc1u7mno998sor.apps.googleusercontent.com"
+        data-scope="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/contacts.readonly"
+        data-requestvisibleactions="http://schemas.google.com/AddActivity"
+        data-callback="_onSignInCallback"
+        data-theme="dark"
+        data-cookiepolicy="single_host_origin">
+    </button>
+  </div>
 
-    <div id="content"></div>
+  <h2>
+    Result
+  </h2>
+  <div id="result">
 
-    <script type="text/javascript">
-      // Enter an API key from the Google API Console:
-      //   https://console.developers.google.com/apis/credentials
-      var apiKey = 'YOUR_API_KEY';
+    <h3>
+      About me from plus API
+    </h3>
+    <div id="me_from_plus">
+    </div>
 
-      // Enter the API Discovery Docs that describes the APIs you want to
-      // access. In this example, we are accessing the People API, so we load
-      // Discovery Doc found here: https://developers.google.com/people/api/rest/
-      var discoveryDocs = ["https://people.googleapis.com/$discovery/rest?version=v1"];
+    <h3>
+      People from plus API
+    </h3>
+    <div id="people_from_plus_api">
+    </div>
 
-      // Enter a client ID for a web application from the Google API Console:
-      //   https://console.developers.google.com/apis/credentials?project=_
-      // In your API Console project, add a JavaScript origin that corresponds
-      //   to the domain where you will be running the script.
-      var clientId = '927726762124-hkl5r97e2uofbslb0fdc1u7mno998sor.apps.googleusercontent.com';
+    <h3>
+      Contact from contacts API
+    </h3>
+    <div id="contacts_from_contact_api">
+    </div>
 
-      // Enter one or more authorization scopes. Refer to the documentation for
-      // the API or https://developers.google.com/people/v1/how-tos/authorizing
-      // for details.
-      var scopes = 'profile';
+  </div>
 
-      var authorizeButton = document.getElementById('authorize-button');
-      var signoutButton = document.getElementById('signout-button');
+</body>
+<script type="text/javascript">
 
-      function handleClientLoad() {
-        // Load the API client and auth2 library
-        gapi.load('client:auth2', initClient);
-      }
+// https://developers.google.com/google-apps/contacts/v3/index#getting_started
+// http://vincentwoo.com/2012/08/15/the-api-for-googles-most-valuable-resource-sucks/
 
-      function initClient() {
-        gapi.client.init({
-            apiKey: apiKey,
-            discoveryDocs: discoveryDocs,
-            clientId: clientId,
-            scope: scopes
-        }).then(function () {
-          // Listen for sign-in state changes.
-          gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+function disconnect() {
+  $.ajax({
+    type: 'GET',
+    url: 'https://accounts.google.com/o/oauth2/revoke?token=' +
+        gapi.auth.getToken().access_token,
+    async: false,
+    contentType: 'application/json',
+    dataType: 'jsonp',
+    success: function(result) {
+      console.log('revoke response: ' + result);
+      $('#gConnect').show();
+      $('#disconnect').hide();
+      $("#result div").empty();
+    },
+    error: function(e) {
+      console.log(e);
 
-          // Handle the initial sign-in state.
-          updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+    }
+  });
+}
 
-          authorizeButton.onclick = handleAuthClick;
-          signoutButton.onclick = handleSignoutClick;
-        });
-      }
+function _onSignInCallback(authResult){
+  gapi.client.load('plus','v1')
+              .then(function() {
+                console.log('authResult', JSON.stringify(authResult));
+                if (authResult['access_token']) {
+                  $('#gConnect').hide();
+                  $('#disconnect').show();
+                  loadSelf();
+                  loadPlusFriends();
+                  loadContacts();
+                } else if (authResult['error']) {
+                  console.error("failed to authentication")
+                }
+              });
+}
 
-      function updateSigninStatus(isSignedIn) {
-        if (isSignedIn) {
-          authorizeButton.style.display = 'none';
-          signoutButton.style.display = 'block';
-          makeApiCall();
-        } else {
-          authorizeButton.style.display = 'block';
-          signoutButton.style.display = 'none';
+
+
+function loadSelf(){
+  gapi.client.plus.people.get({
+    'userId': 'me'
+  }).then(function(res) {
+    var me = res.result;
+    $('#me_from_plus').empty()
+    .append(JSON.stringify(me))
+    .append($('<p><img src=\"' + me.image.url + '\"></p>'))
+  },function(e){
+    console.error("failed to load self",e);
+  });
+
+}
+
+function loadPlusFriends(){
+  gapi.client.plus.people.list({
+    'userId': 'me',
+    'collection': 'visible'
+  }).then(function(res) {
+    var people = res.result;
+    $('#people_from_plus_api').empty().append(JSON.stringify(people));
+
+    for (var personIndex in people.items) {
+      person = people.items[personIndex];
+      $('#people_from_plus_api').append('<img src="' + person.image.url + '">');
+    }
+
+  },function(err){
+    console.error("failed to load people",e);
+  });
+}
+
+function loadContacts(){
+  var urls =[];
+
+  $.ajax({
+    url: 'https://www.google.com/m8/feeds/contacts/default/full?alt=json',
+    dataType: 'jsonp',
+    data: gapi.auth.getToken()
+  }).done(function(data) {
+    $('#contacts_from_contact_api')
+      .empty()
+      .append(JSON.stringify(data.feed));
+    data.feed.entry.forEach(function(e){
+      var pushed = false;
+      e.link.forEach(function(l){
+        if (l.type === "image/*" && !pushed){
+          urls.push(l.href + "?"+ $.param({"access_token":gapi.auth.getToken().access_token, "token_type":gapi.auth.getToken().token_type}));
+          pushed = true;
         }
-      }
+      });
+    });
 
-      function handleAuthClick(event) {
-        gapi.auth2.getAuthInstance().signIn();
-      }
+  function staggerImages(index) {
+    if (index == urls.length) return;
 
-      function handleSignoutClick(event) {
-        gapi.auth2.getAuthInstance().signOut();
-      }
+    var img = new Image();
+    var notFound = false;
+    img.onload = function() {
+      staggerImages(index + 1);
+    };
+    img.onerror = function() {
+      img.src = "404.png"
+    };
+    img.src = urls[index];
+    $('#contacts_from_contact_api').append(img);
+  }
+  staggerImages(0);
+  });
 
-      // Load the API and make an API call.  Display the results on the screen.
-      function makeApiCall() {
-        gapi.client.people.people.get({
-          'resourceName': 'people/me',
-          'requestMask.includeField': 'person.names'
-        }).then(function(resp) {
-          var p = document.createElement('p');
-          var name = resp.result.names[0].givenName;
-          p.appendChild(document.createTextNode('Hello, '+name+'!'));
-          document.getElementById('content').appendChild(p);
-        });
-      }
-    </script>
-    <script async defer src="https://apis.google.com/js/api.js" 
-      onload="this.onload=function(){};handleClientLoad()" 
-      onreadystatechange="if (this.readyState === 'complete') this.onload()">
-    </script>
-  </body>
+}
+
+$(function(){
+  $('#disconnect').on("click", disconnect);
+});
+</script>
 </html>
