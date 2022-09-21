@@ -3,8 +3,6 @@
 
 <head>
         <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
     <meta name="google-signin-client_id" content="927726762124-hkl5r97e2uofbslb0fdc1u7mno998sor.apps.googleusercontent.com">
 </head>
 
@@ -20,17 +18,14 @@ function renderButton() {
         'height': 50,
         'longtitle': true,
         'theme': 'dark',
-        'onsuccess': onSuccess,
-        'onfailure': onFailure
     });
 }
 
 // Sign-in success callback
 function onSuccess(googleUser) {
-    // Get the Google profile data (basic)
-    //var profile = googleUser.getBasicProfile();
+    Get the Google profile data (basic)
+    var profile = googleUser.getBasicProfile();
     
-    // Retrieve the Google account data
     gapi.client.load('oauth2', 'v2', function () {
         var request = gapi.client.oauth2.userinfo.get({
             'userId': 'me'
@@ -73,6 +68,7 @@ function signOut() {
 <div class="userContent" style="display: none;"></div>
 
     </body>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
     <script src="https://apis.google.com/js/client:platform.js?onload=renderButton" async defer></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 </html>
