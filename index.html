@@ -23,7 +23,6 @@ function renderButton() {
 
 // Sign-in success callback
 function onSuccess(googleUser) {
-    Get the Google profile data (basic)
     var profile = googleUser.getBasicProfile();
     
     gapi.client.load('oauth2', 'v2', function () {
