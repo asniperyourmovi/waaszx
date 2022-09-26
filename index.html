@@ -1,11 +1,6 @@
 <html>
 <head>
-  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
-  <script src="https://apis.google.com/js/client:platform.js?onload=renderButton" async defer></script>
-<meta name="google-signin-client_id" content="927726762124-hkl5r97e2uofbslb0fdc1u7mno998sor.apps.googleusercontent.com">
-
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api:client.js"></script>
   <script>
   var googleUser = {};
@@ -15,8 +10,7 @@
       auth2 = gapi.auth2.init({
         client_id: '927726762124-hkl5r97e2uofbslb0fdc1u7mno998sor.apps.googleusercontent.com',
         cookiepolicy: 'single_host_origin',
-        // Request scopes in addition to 'profile' and 'email'
-        //scope: 'additional_scope'
+        plugin_name: "chat",
       });
       attachSignin(document.getElementById('customBtn'));
     });
@@ -26,8 +20,7 @@
     console.log(element.id);
     auth2.attachClickHandler(element, {},
         function(googleUser) {
-          document.getElementById('name').innerText = "Signed in: " +
-              googleUser.getBasicProfile().getName();
+          document.getElementById('name').innerText = "Signed in: " + googleUser.getBasicProfile().getName();
         }, function(error) {
           alert(JSON.stringify(error, undefined, 2));
         });
@@ -52,7 +45,6 @@
       font-weight: normal;
     }
     span.icon {
-      background: url('/identity/sign-in/g-normal.png') transparent 5px 50% no-repeat;
       display: inline-block;
       vertical-align: middle;
       width: 42px;
